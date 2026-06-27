@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>心理探测器 - 心理学测试工具</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; background: #0a0a1a; color: #e0e0e0; min-height: 100vh; }
+
+.header { text-align: center; padding: 40px 20px 20px; }
+.header h1 { font-size: 28px; background: linear-gradient(135deg, #f9d423, #ff4e50); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px; }
+.header p { color: rgba(255,255,255,0.5); font-size: 14px; }
+
+.tab-bar { display: flex; gap: 8px; padding: 0 20px; margin-bottom: 24px; }
+.tab { flex: 1; padding: 10px; border-radius: 10px; border: none; background: transparent; color: rgba(255,255,255,0.5); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+.tab.active { background: rgba(255,255,255,0.12); color: #fff; }
+
+.container { max-width: 480px; margin: 0 auto; padding: 0 20px 100px; }
+.card { background: rgba(255,255,255,0.06); border-radius: 20px; padding: 28px 24px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.08); }
+.card h2 { font-size: 20px; margin-bottom: 16px; color: #fff; }
+.card p { font-size: 15px; line-height: 1.8; color: rgba(255,255,255,0.7); margin-bottom: 12px; }
+
+.btn { display: block; width: 100%; padding: 14px; border-radius: 12px; border: none; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; margin-top: 12px; }
+.btn-primary { background: linear-gradient(135deg, #f9d423, #ff4e50); color: #fff; }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(249,212,35,0.3); }
+.btn-secondary { background: rgba(255,255,255,0.1); color: #fff; }
+
+.insight-card { perspective: 800px; cursor: pointer; }
+.insight-card .card-inner { position: relative; width: 100%; min-height: 200px; transition: transform 0.6s; transform-style: preserve-3d; }
+.insight-card.flipped .card-inner { transform: rotateY(180deg); }
+.card-front, .card-back { position: absolute; width: 100%; min-height: 200px; backface-visibility: hidden; border-radius: 20px; padding: 28px 24px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); }
+.card-back { transform: rotateY(180deg); background: rgba(249,212,35,0.08); border-color: rgba(249,212,35,0.2); }
+.card-front .icon { font-size: 40px; margin-bottom: 12px; }
+.card-front .title { font-size: 18px; font-weight: 600; color: #fff; margin-bottom: 8px; }
+.card-front .hint { font-size: 13px; color: rgba(255,255,255,0.4); }
+.card-back .fact { font-size: 15px; line-height: 1.8; color: rgba(255,255,255,0.85); }
+
+.quiz-option { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: rgba(255,255,255,0.04); border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+.quiz-option:hover { background: rgba(255,255,255,0.08); }
+.quiz-option.selected { border-color: #f9d423; background: rgba(249,212,35,0.08); }
+.quiz-option .opt-letter { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.6); flex-shrink: 0; }
+.quiz-option.selected .opt-letter { background: #f9d423; color: #0a0a1a; }
+
+.result-box { text-align: center; padding: 20px; }
+.result-box .type { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, #f9d423, #ff4e50); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 12px; }
+.result-box .desc { font-size: 14px; line-height: 1.8; color: rgba(255,255,255,0.7); }
+
+.progress { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-bottom: 20px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #f9d423, #ff4e50); border-radius: 2px; transition: width 0.3s; }
+
+.share-btn { position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg,#f9d423,#ff4e50); border: none; color: #fff; font-size: 24px; cursor: pointer; box-shadow: 0 4px 20px rgba(249,212,35,0.4); transition: transform 0.3s; z-index: 100; }
+.share-btn:hover { transform: scale(1.1); }
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🧠 心理探测器</h1>
+  <p>每天一个反常识心理学知识 · 3分钟了解你自己</p>
+</div>
+
+<div class="tab-bar">
+  <button class="tab active" onclick="switchTab('insights')">💡 洞察</button>
+  <button class="tab" onclick="switchTab('quiz')">🃣 测验</button>
+  <button class="tab" onclick="switchTab('personality')">🃠 人格</button>
+</div>
+
+<!-- 洞察卡片 -->
+<div class="container" id="insights-tab">
+  <div class="card insight-card" onclick="this.classList.toggle('flipped')">
+    <div class="card-inner">
+      <div class="card-front">
+        <div class="icon">🍬</div>
+        <div class="title">棉花糖实验测的不是意志力</div>
+        <div class="hint">点击翻转查看真相 →</div>
+      </div>
+      <div class="card-back">
+        <div class="fact">2018年UC Davis重复实验（918个孩子）发现：控制家庭背景后，延迟满足与学业表现的相关性从0.57降至0.15。<br><br>真正决定孩子能不能等的，是<strong>家庭环境的可信度</strong>——富裕家庭的孩子见过承诺被兑现，贫困家庭的孩子学会了"到手才靠得住"。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card insight-card" onclick="this.classList.toggle('flipped')">
+    <div class="card-inner">
+      <div class="card-front">
+        <div class="icon">⚡</div>
+        <div class="title">旁观者效应是《纽约时报》编的</div>
+        <div class="hint">点击翻转查看真相 →</div>
+      </div>
+      <div class="card-back">
+        <div class="fact">1964年Kitty Genovese案报道称"38名目击者无一人报警"，后来被证实严重夸大。<br><br>2019年两项大数据分析（共2万+真实案件）发现：<strong>真实危险中，旁观者越多，有人出手帮忙的概率越高</strong>。扩散责任存在，但不是故事讲的那样。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card insight-card" onclick="this.classList.toggle('flipped')">
+    <div class="card-inner">
+      <div class="card-front">
+        <div class="icon">🎭</div>
+        <div class="title">斯坦福监狱实验数据被伪造</div>
+        <div class="hint">点击翻转查看真相 →</div>
+      </div>
+      <div class="card-back">
+        <div class="fact">2007年调查记者Ben Blum发现：津巴多给学生"看守"明确的虐待指令；至少一名"看守"承认是心理学家要求在镜头前表现得更残酷。<br><br>2018年，原实验的<strong>原始数据终于公开</strong>——但半个世纪的研究引用，已经写进了每一本心理学教科书。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card insight-card" onclick="this.classList.toggle('flipped')">
+    <div class="card-inner">
+      <div class="card-front">
+        <div class="icon">🧪</div>
+        <div class="title">心理学重复危机：100个实验60%无法重复</div>
+        <div class="hint">点击翻转查看真相 →</div>
+      </div>
+      <div class="card-back">
+        <div class="fact">2015年，《科学》期刊发表了心理学史上最大规模的重复实验计划：100个经典实验，由270位科学家联合重复。<br><br>结果：<strong>60%无法重复</strong>。包括一些最著名的发现——比如"具身认知"（握热咖啡会让人更温暖）等。</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 心理测验 -->
+<div class="container hidden" id="quiz-tab">
+  <div class="progress"><div class="progress-fill" id="quiz-progress"></div></div>
+  <div class="card" id="quiz-card">
+    <h2 id="quiz-q"></h2>
+    <div id="quiz-options"></div>
+    <button class="btn btn-primary hidden" id="quiz-next" onclick="nextQuiz()">下一题</button>
+  </div>
+  <div class="card hidden" id="quiz-result">
+    <div class="result-box">
+      <div class="type" id="quiz-type"></div>
+      <div class="desc" id="quiz-desc"></div>
+      <button class="btn btn-secondary" onclick="retakeQuiz()" style="margin-top:16px;">重新测试</button>
+    </div>
+  </div>
+</div>
+
+<!-- 人格测试 -->
+<div class="container hidden" id="personality-tab">
+  <div class="progress"><div class="progress-fill" id="pers-progress"></div></div>
+  <div class="card" id="pers-card">
+    <h2 id="pers-q"></h2>
+    <div id="pers-options"></div>
+  </div>
+  <div class="card hidden" id="pers-result">
+    <div class="result-box">
+      <div class="type" id="pers-type"></div>
+      <div class="desc" id="pers-desc"></div>
+      <button class="btn btn-secondary" onclick="retakePers()" style="margin-top:16px;">重新测试</button>
+    </div>
+  </div>
+</div>
+
+<button class="share-btn" onclick="shareTool()">📤</button>
+
+<script>
+// 切换标签页
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.container').forEach(c => c.classList.add('hidden'));
+  event.target.classList.add('active');
+  document.getElementById(tab + '-tab').classList.remove('hidden');
+  if (tab === 'quiz') startQuiz();
+  if (tab === 'personality') startPers();
+}
+
+// 心理测验
+const quizData = [
+  { q: "朋友迟到30分钟，你第一反应是？", opts: ["他肯定是故意的", "可能路上堵车了吧", "又放我鸽子，下次不约了", "先发个消息问问情况"], type: { 0: 'A', 1: 'C', 2: 'B', 3: 'D' } },
+  { q: "团队项目搞砸了，你的反应是？", opts: ["谁负责这块谁背锅", "我们一起看看哪里出了问题", "下次我再也不主动了", "先想办法补救，别相互指责"], type: { 0: 'B', 1: 'D', 2: 'A', 3: 'C' } },
+  { q: "看到有人在公共场合大声吵架，你会？", opts: ["走开，不关我事", "偷偷录个视频发朋友圈", "过去问问需不需要帮忙", "打电话报警或找保安"], type: { 0: 'A', 1: 'B', 2: 'D', 3: 'C' } },
+  { q: "你更愿意相信哪种人？", opts: ["说话温柔、慢条斯理的人", "直接说'我不喜欢你'的人", "承诺很多但经常爽约的人", "话不多但每次答应的事都做到的人"], type: { 0: 'C', 1: 'A', 2: 'B', 3: 'D' } },
+  { q: "如果有人当众批评你，你的反应是？", opts: ["当场怼回去", "表面笑嘻嘻，心里记一笔", "回去一个人反复想这件事", "问清楚对方具体指什么，该改就改"], type: { 0: 'B', 1: 'A', 2: 'C', 3: 'D' } }
+];
+let quizIdx = 0, quizScores = { A:0, B:0, C:0, D:0 };
+const quizTypes = {
+  A: { name: "🔥 情绪主导型", desc: "你的反应快、感受强，但容易在情绪高峰做决定。学会'等3秒再说话'，是你最需要练习的功课。\n\n<strong>建议</strong>：练习情绪标记——生气时先说出'我现在很生气'，而不是立刻行动。" },
+  B: { name: "🛡️ 防御回避型", desc: "你习惯先保护自己，避免受伤。这很聪明，但有时候也会错过真诚的连接。\n\n<strong>建议</strong>：试着在一次对话里，主动说一句'我其实有点在意这个'——适度的脆弱，是信任的开始。" },
+  C: { name: "🤝 合作建设型", desc: "你倾向于解决问题而非指责人，这是非常稀缺的能力。继续发挥这个优势。\n\n<strong>建议</strong>：别忘了保护自己的边界——太好说话的人，容易被当成'好捏的柿子'。" },
+  D: { name: "🧭 内省分析型", desc: "你习惯反复咀嚼一件事，试图找到'根本原因'。这让你有深度，但也可能让你陷入过度分析。\n\n<strong>建议</strong>：设定'反思时限'——一件事想不超过24小时，然后行动。" }
+};
+
+function startQuiz() {
+  quizIdx = 0; quizScores = { A:0, B:0, C:0, D:0 };
+  showQuizQuestion();
+}
+function showQuizQuestion() {
+  const q = quizData[quizIdx];
+  document.getElementById('quiz-q').textContent = `第${quizIdx+1}题 · ${q.q}`;
+  document.getElementById('quiz-progress').style.width = `${(quizIdx/quizData.length)*100}%`;
+  const optDiv = document.getElementById('quiz-options');
+  optDiv.innerHTML = '';
+  ['A','B','C','D'].forEach((letter, i) => {
+    const opt = q.opts[i];
+    const div = document.createElement('div');
+    div.className = 'quiz-option';
+    div.innerHTML = `<span class="opt-letter">${letter}</span><span>${opt}</span>`;
+    div.onclick = () => selectQuizOption(div, letter);
+    optDiv.appendChild(div);
+  });
+  document.getElementById('quiz-next').classList.add('hidden');
+  document.getElementById('quiz-card').classList.remove('hidden');
+  document.getElementById('quiz-result').classList.add('hidden');
+}
+function selectQuizOption(el, letter) {
+  document.querySelectorAll('#quiz-options .quiz-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  quizScores[letter]++;
+  document.getElementById('quiz-next').classList.remove('hidden');
+}
+function nextQuiz() {
+  quizIdx++;
+  if (quizIdx >= quizData.length) { showQuizResult(); return; }
+  showQuizQuestion();
+}
+function showQuizResult() {
+  document.getElementById('quiz-card').classList.add('hidden');
+  document.getElementById('quiz-result').classList.remove('hidden');
+  document.getElementById('quiz-progress').style.width = '100%';
+  const maxType = Object.entries(quizScores).sort((a,b)=>b[1]-a[1])[0][0];
+  const t = quizTypes[maxType];
+  document.getElementById('quiz-type').textContent = t.name;
+  document.getElementById('quiz-desc').innerHTML = t.desc;
+}
+function retakeQuiz() { startQuiz(); }
+
+// 人格测试（大五人格简化版）
+const persData = [
+  { q: "我喜欢成为关注的中心", reverse: false, trait: 'E' },
+  { q: "我更喜欢独处而非参加聚会", reverse: true, trait: 'E' },
+  { q: "我总是提前计划，不喜欢临时变动", reverse: false, trait: 'C' },
+  { q: "我经常感到焦虑或担心", reverse: false, trait: 'N' },
+  { q: "我对他人的感受很敏感", reverse: false, trait: 'A' },
+  { q: "我喜欢尝试新鲜事物和经历", reverse: false, trait: 'O' },
+  { q: "我做事有条理，不会丢三落四", reverse: false, trait: 'C' },
+  { q: "我很容易信任陌生人", reverse: false, trait: 'A' },
+  { q: "我的情绪起伏很大，时好时坏", reverse: false, trait: 'N' },
+  { q: "我更喜欢熟悉的环境而非新奇的体验", reverse: true, trait: 'O' }
+];
+let persIdx = 0, persScores = { O:50, C:50, E:50, A:50, N:50 };
+const traitNames = { O:'开放性', C:'尽责性', E:'外向性', A:'宜人性', N:'神经质' };
+const traitDesc = {
+  O: (s) => s>70?'你充满好奇，喜欢探索新领域':'你偏好稳定和熟悉，这让你更有安全感',
+  C: (s) => s>70?'你做事有条理，是团队里最可靠的人':'你更随性，但有时也能带来意外的创造力',
+  E: (s) => s>70?'你是能量源，周围的人都被你感染':'你从独处中充电，深度思考是你的超能力',
+  A: (s) => s>70?'你总是为别人着想，有时要学会说不':'你更务实，这让你在谈判中更有优势',
+  N: (s) => s>70?'你感受力强，艺术天赋可能很高':'你情绪稳定，是朋友眼里的定海神针'
+};
+
+function startPers() {
+  persIdx = 0; persScores = { O:50, C:50, E:50, A:50, N:50 };
+  showPersQuestion();
+}
+function showPersQuestion() {
+  const q = persData[persIdx];
+  document.getElementById('pers-q').textContent = `第${persIdx+1}/10 · ${q.q}`;
+  document.getElementById('pers-progress').style.width = `${(persIdx/persData.length)*100}%`;
+  const optDiv = document.getElementById('pers-options');
+  optDiv.innerHTML = '';
+  ['非常不同意','不太同意','中立','比较同意','非常同意'].forEach((text, i) => {
+    const score = (i-2) * 20; // -40, -20, 0, 20, 40
+    const div = document.createElement('div');
+    div.className = 'quiz-option';
+    div.innerHTML = `<span class="opt-letter">${i+1}</span><span>${text}</span>`;
+    div.onclick = () => selectPersOption(div, score, q.reverse);
+    optDiv.appendChild(div);
+  });
+}
+function selectPersOption(el, score, reverse) {
+  document.querySelectorAll('#pers-options .quiz-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  setTimeout(() => {
+    persScores[persData[persIdx].trait] += reverse ? -score : score;
+    persIdx++;
+    if (persIdx >= persData.length) { showPersResult(); return; }
+    showPersQuestion();
+  }, 300);
+}
+function showPersResult() {
+  document.getElementById('pers-card').classList.add('hidden');
+  document.getElementById('pers-result').classList.remove('hidden');
+  document.getElementById('pers-progress').style.width = '100%';
+  const topTrait = Object.entries(persScores).sort((a,b)=>b[1]-a[1])[0];
+  const typeName = `${traitNames[topTrait[0]]}突出型`;
+  let desc = `你的${traitNames[topTrait[0]]}得分最高（${Math.min(100,Math.max(0,topTrait[1]))}分）。\n\n`;
+  Object.entries(persScores).forEach(([t,s]) => {
+    desc += `${traitNames[t]}：${Math.min(100,Math.max(0,s))}分 — ${traitDesc[t](s)}\n\n`;
+  });
+  document.getElementById('pers-type').textContent = `🧠 ${typeName}`;
+  document.getElementById('pers-desc').innerText = desc.trim();
+}
+function retakePers() { startPers(); }
+
+// 分享
+function shareTool() {
+  if (navigator.share) {
+    navigator.share({ title: '心理探测器', text: '来测测你的心理类型！', url: window.location.href });
+  } else {
+    prompt('复制此链接分享给朋友：', window.location.href);
+  }
+}
+
+// 初始化
+startQuiz();
+</script>
+</body>
+</html>
